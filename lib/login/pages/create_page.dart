@@ -53,7 +53,7 @@ class _CreatePageState extends State<CreatePage> {
       if (user != null) {
         await _firestore.collection('users').doc(user.uid).set({
           'email': user.email,
-          'diamonds': 25, // starting diamonds
+          'diamonds': 20, // starting diamonds
           'testedApps': [],
           'createdAt': FieldValue.serverTimestamp(),
         });
@@ -62,7 +62,7 @@ class _CreatePageState extends State<CreatePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Account created successfully! +25 Diamonds"),
+          content: Text("Account created successfully! +20 Diamonds"),
         ),
       );
 

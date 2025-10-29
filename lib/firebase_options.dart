@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyA2n6WgOj_APoclFVM-E2DeQTJDFDNoNzY',
-    appId: '1:579942784197:android:13ebb2b21a3222b25c64ac',
+    appId: '1:579942784197:android:6c0a4dd26982173c5c64ac',
     messagingSenderId: '579942784197',
     projectId: 'closed-testing-2f318',
     storageBucket: 'closed-testing-2f318.firebasestorage.app',
@@ -64,6 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '579942784197',
     projectId: 'closed-testing-2f318',
     storageBucket: 'closed-testing-2f318.firebasestorage.app',
+    iosClientId: '579942784197-lo8u96ermtookepn9uv5r5q8tatlbo2h.apps.googleusercontent.com',
     iosBundleId: 'com.example.closedTesting',
   );
 
@@ -73,6 +74,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '579942784197',
     projectId: 'closed-testing-2f318',
     storageBucket: 'closed-testing-2f318.firebasestorage.app',
+    iosClientId: '579942784197-lo8u96ermtookepn9uv5r5q8tatlbo2h.apps.googleusercontent.com',
     iosBundleId: 'com.example.closedTesting',
   );
 
