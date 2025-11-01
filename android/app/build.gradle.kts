@@ -65,13 +65,13 @@ android {
 dependencies {
     implementation("com.google.firebase:firebase-auth:23.0.0")
     implementation("com.google.android.gms:play-services-auth:21.1.1")
-    implementation("com.google.android.play:core-ktx:1.8.1")
+    // implementation("com.google.android.play:core-ktx:1.8.1")
 
     // Exclude old Play Core duplicates if Firebase pulls them in
-    configurations.all {
-        exclude(group = "com.google.android.play", module = "core")
-        exclude(group = "com.google.android.play", module = "core-common")
-    }
+    //configurations.all {
+        //exclude(group = "com.google.android.play", module = "core")
+        //exclude(group = "com.google.android.play", module = "core-common")
+    //}
 }
 
 flutter {
