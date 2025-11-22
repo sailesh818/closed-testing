@@ -12,15 +12,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // 🔹 LOGOUT METHOD
   Future<void> logoutUser() async {
     try {
       await FirebaseAuth.instance.signOut();
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginPage()),
-        );
-      }
+      setState(() {}); // Refresh UI
     } catch (e) {
       debugPrint("Error during logout: $e");
     }
@@ -30,12 +26,14 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
 
+    final bool isAnonymous = user != null && user.isAnonymous;
+
     return Scaffold(
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // 🔹 Drawer Header with Diamond Info
+            // 🔹 Drawer Header with User Info or Login Prompt
             DrawerHeader(
               decoration: const BoxDecoration(color: Colors.green),
               child: Column(
@@ -46,7 +44,9 @@ class _HomePageState extends State<HomePage> {
                     style: TextStyle(color: Colors.white, fontSize: 22),
                   ),
                   const SizedBox(height: 8),
-                  if (user != null)
+
+                  // 🔹 Logged-in normal user → Show diamonds
+                  if (user != null && !isAnonymous)
                     StreamBuilder<DocumentSnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('users')
@@ -62,6 +62,7 @@ class _HomePageState extends State<HomePage> {
 
                         final userData =
                             snapshot.data!.data() as Map<String, dynamic>?;
+
                         final diamonds = userData?['diamonds'] ?? 0;
 
                         return Text(
@@ -74,23 +75,53 @@ class _HomePageState extends State<HomePage> {
                         );
                       },
                     )
+
+                  // 🔹 Anonymous user → special message
+                  else if (isAnonymous)
+                    const Text(
+                      "Logged in anonymously.\nLogin to save progress!",
+                      style: TextStyle(color: Colors.white70, fontSize: 16),
+                    )
+
+                  // 🔹 Logged out
                   else
                     const Text(
-                      "Not logged in",
+                      "You are not logged in",
                       style: TextStyle(color: Colors.white70, fontSize: 16),
                     ),
                 ],
               ),
             ),
 
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text("Logout"),
-              onTap: () async {
-                Navigator.pop(context);
-                await logoutUser();
-              },
-            ),
+            // 🔹 If logged out or anonymous → Show Login button
+            if (user == null || isAnonymous)
+              ListTile(
+                leading: const Icon(Icons.login),
+                title: Text(
+                  isAnonymous ? "Login to Save Progress" : "Login",
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const LoginPage()),
+                  ).then((_) {
+                    setState(() {}); // Refresh after login
+                  });
+                },
+              ),
+
+            // 🔹 If logged-in normal user → Show Logout button
+            if (user != null && !isAnonymous)
+              ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text("Logout"),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await logoutUser();
+                },
+              ),
           ],
         ),
       ),
@@ -101,7 +132,7 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
       ),
 
-      // 🔹 Show Public Apps
+      // 🔹 Public apps always visible (even anonymous users can view)
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection("apps")
@@ -129,7 +160,8 @@ class _HomePageState extends State<HomePage> {
             itemBuilder: (context, i) {
               final app = apps[i].data() as Map<String, dynamic>? ?? {};
               final appName = app['appName'] ?? 'Unnamed App';
-              final description = app['description'] ?? 'No description provided';
+              final description =
+                  app['description'] ?? 'No description provided';
 
               return Card(
                 shape: RoundedRectangleBorder(

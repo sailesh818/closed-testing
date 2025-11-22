@@ -1,6 +1,7 @@
 import 'package:closed_testing/home/page/create_app_page.dart';
 import 'package:closed_testing/home/page/home_page.dart';
 import 'package:closed_testing/home/page/my_apps_page.dart';
+import 'package:closed_testing/login/pages/login_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -18,37 +19,87 @@ class _NavigationBarPageState extends State<NavigationBarPage> {
   final List<Widget> pages = [
     const HomePage(),
     const CreateAppPage(),
-    const MyAppsPage()
+    const MyAppsPage(),
   ];
 
   Future<void> _handleCreateTap(BuildContext context) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please log in to create an app.')),
+
+    // ⛔ If user is anonymous or not logged in → show popup instead of redirect
+    if (user == null || user.isAnonymous) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Login Required'),
+          content: const Text(
+            'You must be logged in to create a new app for testing.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // close popup
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                );
+              },
+              child: const Text('Login'),
+            ),
+          ],
+        ),
       );
       return;
     }
 
-    final userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    // Check if Firestore profile exists
+    final userDoc =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
     final docSnapshot = await userDoc.get();
 
     if (!docSnapshot.exists) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User profile not found.')),
+      // ⛔ Firestore profile missing → show same popup
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Account Not Set Up'),
+          content: const Text(
+            'Please log in again to complete your account setup.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                );
+              },
+              child: const Text('Login'),
+            ),
+          ],
+        ),
       );
       return;
     }
 
+    // Check diamonds
     int diamonds = (docSnapshot.data()?['diamonds'] ?? 0) as int;
 
     if (diamonds >= 25) {
-      // ✅ Only check, don’t deduct yet
+      // Enough diamonds → allow navigation
       setState(() {
-        currentIndex = 1; // Navigate to CreateAppPage
+        currentIndex = 1; // CreateAppPage
       });
     } else {
-      // Show popup for insufficient diamonds
+      // Not enough diamonds → show popup
       showDialog(
         context: context,
         builder: (context) => AlertDialog(

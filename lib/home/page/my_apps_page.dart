@@ -5,9 +5,25 @@ import 'app_detail_page.dart';
 
 class MyAppsPage extends StatelessWidget {
   const MyAppsPage({super.key});
+
   @override
   Widget build(BuildContext context) {
-    final userId = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+
+    // 🔍 Check if User is Logged In
+    if (user == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text("My Apps")),
+        body: const Center(
+          child: Text(
+            "You are not logged in yet.",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+          ),
+        ),
+      );
+    }
+
+    final userId = user.uid;
 
     return Scaffold(
       appBar: AppBar(title: const Text('My Apps')),
@@ -29,6 +45,7 @@ class MyAppsPage extends StatelessWidget {
               ),
             );
           }
+
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(
               child: Text(
@@ -37,6 +54,7 @@ class MyAppsPage extends StatelessWidget {
               ),
             );
           }
+
           final docs = snapshot.data!.docs;
 
           return ListView.builder(
@@ -46,8 +64,8 @@ class MyAppsPage extends StatelessWidget {
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: const AssetImage('assets/closed_testing.png'),
+                  leading: const CircleAvatar(
+                    backgroundImage: AssetImage('assets/closed_testing.png'),
                     radius: 24,
                   ),
                   title: Text(app['appName'] ?? 'Unnamed App'),

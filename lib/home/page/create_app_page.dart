@@ -54,6 +54,7 @@ class _CreateAppPageState extends State<CreateAppPage> {
         .limit(1)
         .get();
     if (appQuery.docs.isNotEmpty) return true;
+
     return false;
   }
 
@@ -99,6 +100,23 @@ class _CreateAppPageState extends State<CreateAppPage> {
     setState(() => _isLoading = true);
 
     try {
+      // 🔥 CHECK DIAMONDS BEFORE DOING ANYTHING
+      final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final userSnap = await userDocRef.get();
+      int diamonds = (userSnap['diamonds'] ?? 0) as int;
+
+      if (diamonds < 25) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Not enough diamonds! You need 25 diamonds to register an app.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        return;
+      }
+
+      // 🔥 Check duplicates
       final isDuplicate = await _isDuplicateApp(appName, webLink, appLink);
 
       if (isDuplicate) {
@@ -112,7 +130,7 @@ class _CreateAppPageState extends State<CreateAppPage> {
         return;
       }
 
-      // ✅ Create app entry
+      // 🔥 CREATE APP ENTRY FIRST
       await FirebaseFirestore.instance.collection('apps').add({
         'userId': user.uid,
         'appName': appName,
@@ -125,19 +143,15 @@ class _CreateAppPageState extends State<CreateAppPage> {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // ✅ Deduct 25 diamonds AFTER success
-      final userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      // 🔥 ONLY AFTER SUCCESS: DEDUCT 25 DIAMONDS
       await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final snapshot = await transaction.get(userDoc);
-        if (snapshot.exists) {
-          int currentDiamonds = (snapshot['diamonds'] ?? 0) as int;
-          if (currentDiamonds >= 25) {
-            transaction.update(userDoc, {'diamonds': currentDiamonds - 25});
-          }
-        }
+        final freshSnap = await transaction.get(userDocRef);
+        int current = (freshSnap['diamonds'] ?? 0) as int;
+        transaction.update(userDocRef, {'diamonds': current - 25});
       });
 
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('App registered successfully! 25 diamonds deducted.'),
@@ -149,6 +163,7 @@ class _CreateAppPageState extends State<CreateAppPage> {
         context,
         MaterialPageRoute(builder: (_) => const NavigationBarPage()),
       );
+
     } catch (e) {
       debugPrint('Firestore Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
